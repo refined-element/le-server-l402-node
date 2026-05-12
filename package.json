@@ -1,0 +1,63 @@
+{
+  "name": "l402-server",
+  "version": "0.1.0",
+  "description": "L402 server SDK for Node — mint Lightning invoices + macaroons and verify L402 tokens. Thin TypeScript wrapper around Lightning Enable's hosted producer API.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "l402",
+    "lightning",
+    "lightning-network",
+    "bitcoin",
+    "macaroon",
+    "payment",
+    "402",
+    "api",
+    "monetization",
+    "agent",
+    "ai"
+  ],
+  "author": "Refined Element, LLC",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/refined-element/le-server-l402-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/refined-element/le-server-l402-node/issues"
+  },
+  "homepage": "https://github.com/refined-element/le-server-l402-node#readme",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
