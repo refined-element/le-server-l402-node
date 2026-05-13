@@ -1,6 +1,6 @@
 {
   "name": "l402-server",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "L402 server SDK for Node — mint Lightning invoices + macaroons and verify L402 tokens. Thin TypeScript wrapper around Lightning Enable's hosted producer API.",
   "type": "module",
   "main": "./dist/index.cjs",
