@@ -23,6 +23,26 @@ describe("L402Server constructor", () => {
     expect(() => new L402Server({ apiKey: "   " })).toThrow(/apiKey/);
   });
 
+  // Regression: a parent shell can export the literal string "${VAR_NAME}"
+  // (from an unrendered settings.json or env file) and the SDK would happily
+  // POST that as the X-API-Key header, getting back an opaque 401/403 from
+  // the producer API. Catch it at construction with a self-diagnosing error.
+  it("throws a self-diagnosing error if apiKey is an unresolved placeholder", () => {
+    expect(() => new L402Server({ apiKey: "${LIGHTNING_ENABLE_API_KEY}" })).toThrow(
+      /unresolved environment-variable placeholder/,
+    );
+    expect(() => new L402Server({ apiKey: "${SOME_OTHER_VAR}" })).toThrow(
+      /unresolved environment-variable placeholder/,
+    );
+  });
+
+  it("accepts apiKey that merely contains a dollar sign or braces (not the full ${...} shape)", () => {
+    // Make sure we don't false-positive on real keys that happen to contain $ or }.
+    expect(() => new L402Server({ apiKey: "abc$def" })).not.toThrow();
+    expect(() => new L402Server({ apiKey: "abc{def}" })).not.toThrow();
+    expect(() => new L402Server({ apiKey: "${incomplete" })).not.toThrow();
+  });
+
   it("accepts a minimal config", () => {
     const client = new L402Server({ apiKey: API_KEY });
     expect(client).toBeInstanceOf(L402Server);

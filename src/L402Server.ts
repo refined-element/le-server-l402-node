@@ -69,6 +69,14 @@ export class L402Server {
         "L402Server: `apiKey` is required. Get one from your Lightning Enable dashboard.",
       );
     }
+    if (/^\$\{[^}]+\}$/.test(options.apiKey.trim())) {
+      throw new Error(
+        `L402Server: \`apiKey\` looks like an unresolved environment-variable placeholder (${options.apiKey.trim()}). ` +
+          `This usually means a parent shell exported the literal string \"\${VAR_NAME}\" instead of the substituted value. ` +
+          `Common sources: settings.json/launch.json with unrendered \${env:NAME}, a Dockerfile ENV line, or a chained .env loader. ` +
+          `Fix by setting LIGHTNING_ENABLE_API_KEY directly to the real key, or by clearing the placeholder so the SDK reads the right value.`,
+      );
+    }
 
     this.apiKey = options.apiKey;
     this.baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
