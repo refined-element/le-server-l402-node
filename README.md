@@ -1,5 +1,8 @@
 # l402-server
 
+[![Discord](https://img.shields.io/discord/1405389254892195951?label=community&logo=discord&color=5865F2)](https://discord.gg/rX7NxHY8vx)
+
+
 [![npm](https://img.shields.io/npm/v/l402-server.svg)](https://www.npmjs.com/package/l402-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
