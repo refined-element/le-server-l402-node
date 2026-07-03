@@ -344,6 +344,81 @@ describe("verifyToken", () => {
     ).rejects.toThrow(/preimage/);
   });
 
+  it("passes resource and amountSats through the verify body when provided", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(200, {
+        valid: true,
+        resource: "/api/weather",
+        merchantId: 42,
+        amountSats: 100,
+        paymentHash: "abc123",
+      }),
+    );
+    const client = new L402Server({
+      apiKey: API_KEY,
+      baseUrl: BASE_URL,
+      fetch: fetchImpl,
+    });
+
+    await client.verifyToken({
+      macaroon: "AgEL...",
+      preimage: "deadbeef".repeat(8),
+      resource: "/api/weather",
+      amountSats: 100,
+    });
+
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
+    expect(body).toEqual({
+      macaroon: "AgEL...",
+      preimage: "deadbeef".repeat(8),
+      resource: "/api/weather",
+      amountSats: 100,
+    });
+  });
+
+  it("omits resource and amountSats from the verify body when not provided", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(200, { valid: true, paymentHash: "abc" }),
+    );
+    const client = new L402Server({
+      apiKey: API_KEY,
+      baseUrl: BASE_URL,
+      fetch: fetchImpl,
+    });
+
+    await client.verifyToken({
+      macaroon: "AgEL...",
+      preimage: "deadbeef".repeat(8),
+    });
+
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body as string);
+    expect("resource" in body).toBe(false);
+    expect("amountSats" in body).toBe(false);
+  });
+
+  it("rejects empty-string resource (would silently disable enforcement server-side)", async () => {
+    const client = new L402Server({ apiKey: API_KEY, fetch: vi.fn() });
+    await expect(
+      client.verifyToken({ macaroon: "AgEL...", preimage: "abc", resource: "" }),
+    ).rejects.toThrow(/resource/);
+    await expect(
+      client.verifyToken({ macaroon: "AgEL...", preimage: "abc", resource: "   " }),
+    ).rejects.toThrow(/resource/);
+  });
+
+  it("rejects amountSats below 1 or non-finite", async () => {
+    const client = new L402Server({ apiKey: API_KEY, fetch: vi.fn() });
+    await expect(
+      client.verifyToken({ macaroon: "m", preimage: "p", amountSats: 0 }),
+    ).rejects.toThrow(/amountSats/);
+    await expect(
+      client.verifyToken({ macaroon: "m", preimage: "p", amountSats: -10 }),
+    ).rejects.toThrow(/amountSats/);
+    await expect(
+      client.verifyToken({ macaroon: "m", preimage: "p", amountSats: NaN }),
+    ).rejects.toThrow(/amountSats/);
+  });
+
   it("maps 401 to L402AuthError on verify too", async () => {
     const fetchImpl = vi
       .fn()

@@ -166,7 +166,9 @@ export class L402Server {
    * inspect `result.valid` rather than relying on HTTP status. Non-200
    * responses indicate a higher-level problem (auth, plan, transport).
    *
-   * @param args - macaroon (required for L402; omit only for MPP) + preimage.
+   * @param args - macaroon (required for L402; omit only for MPP) + preimage,
+   *   plus optional `resource` / `amountSats` for server-side caveat
+   *   enforcement against the current request.
    * @returns The {@link VerificationResult}.
    * @throws {@link L402AuthError} on 401 (invalid API key).
    * @throws {@link L402PlanError} on 403 (L402 not enabled on merchant's plan).
@@ -177,6 +179,22 @@ export class L402Server {
     if (!args.preimage || args.preimage.trim().length === 0) {
       throw new Error("verifyToken: `preimage` is required.");
     }
+    // Mirror the producer API's validation so the caller gets an immediate,
+    // descriptive error instead of a 400 round-trip. An empty-string
+    // `resource` would otherwise silently disable path-caveat enforcement.
+    if (args.resource !== undefined && args.resource.trim().length === 0) {
+      throw new Error(
+        "verifyToken: `resource` must be non-empty when provided; omit it entirely to skip path-caveat enforcement.",
+      );
+    }
+    if (
+      args.amountSats !== undefined &&
+      (!Number.isFinite(args.amountSats) || args.amountSats < 1)
+    ) {
+      throw new Error(
+        "verifyToken: `amountSats` must be ≥ 1 when provided; omit it entirely to skip amount-caveat enforcement.",
+      );
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -184,9 +202,13 @@ export class L402Server {
       Accept: "application/json",
     };
 
+    // JSON.stringify drops undefined properties, so optional args are only
+    // sent when the caller opted into server-side caveat enforcement.
     const body = JSON.stringify({
       macaroon: args.macaroon,
       preimage: args.preimage,
+      resource: args.resource,
+      amountSats: args.amountSats,
     });
 
     const response = await this.request(
