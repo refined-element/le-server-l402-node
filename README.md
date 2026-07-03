@@ -86,12 +86,16 @@ Returns: `{ invoice, macaroon, paymentHash, expiresAt, resource, priceSats, mppC
 
 ```ts
 {
-  macaroon?: string;  // required for L402; omit only for MPP
+  macaroon?: string;   // required for L402; omit only for MPP
   preimage: string;
+  resource?: string;   // optional: enforce the macaroon's path caveat server-side
+  amountSats?: number; // optional: enforce the amount_sats caveat server-side (≥ 1)
 }
 ```
 
 Returns: `{ valid, error?, resource?, merchantId?, amountSats?, paymentHash? }`. Inspect `result.valid` — the producer API returns 200 OK for both valid and invalid tokens.
+
+Pass `resource` (typically the incoming request path) and/or `amountSats` (your endpoint's price) to have Lightning Enable enforce the macaroon's `path` and `amount_sats` caveats during verification — a token bound to a different resource or price tier comes back `valid: false`. If you omit them, the caveat values are still returned on the result but **not** enforced; the comparison is then your responsibility.
 
 ### Errors
 
@@ -111,10 +115,13 @@ Lightning Enable supports two integration shapes:
 - **Proxy mode** — point Lightning Enable at your API URL; we forward authenticated requests on your behalf. Best for public APIs or quick experiments. [Setup walkthrough](https://docs.lightningenable.com/products/l402-microtransactions/proxy-setup-walkthrough).
 - **Native mode** — install this SDK in your existing API. Lightning Enable handles payment; your API handles everything else. Best for commercial APIs with their own auth, observability, or sensitive infrastructure. **This SDK is the Native mode building block.**
 
-Framework-specific middleware that wraps this SDK is in development:
+Framework-specific middleware that wraps the server SDKs is available today:
 
-- `l402-express` — Express middleware
-- ASP.NET Core middleware (separate package)
+- [`l402-express`](https://www.npmjs.com/package/l402-express) — Express middleware (wraps this SDK)
+- [`L402Server.AspNetCore`](https://www.nuget.org/packages/L402Server.AspNetCore) — ASP.NET Core middleware (wraps the [`L402Server`](https://www.nuget.org/packages/L402Server) .NET SDK)
+
+On the roadmap:
+
 - FastAPI dependency (separate package)
 - `l402-server-go` — Go middleware (Phase 2 of the roadmap)
 

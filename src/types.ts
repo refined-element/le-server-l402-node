@@ -141,6 +141,27 @@ export interface VerifyTokenArgs {
    * Hex-encoded payment preimage (64 chars).
    */
   preimage: string;
+
+  /**
+   * Optional: the request path you are gating, compared against the
+   * macaroon's `path` caveat **server-side**. When provided, the producer
+   * API returns `valid: false` if the token was bound to a different
+   * resource. When omitted, the path caveat is read out (see
+   * {@link VerificationResult.resource}) but NOT enforced — you are
+   * responsible for the comparison. Must be non-empty when provided
+   * (the producer API rejects an empty string with 400).
+   */
+  resource?: string;
+
+  /**
+   * Optional: the price (in satoshis) your endpoint requires, compared
+   * against the macaroon's `amount_sats` caveat **server-side**. When
+   * provided, the producer API returns `valid: false` on a mismatch —
+   * prevents replaying a cheap token against a pricier endpoint. When
+   * omitted, the amount caveat is read out but NOT enforced. Must be
+   * ≥ 1 when provided.
+   */
+  amountSats?: number;
 }
 
 /**
