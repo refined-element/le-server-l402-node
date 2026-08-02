@@ -4,7 +4,16 @@
 
 
 [![npm](https://img.shields.io/npm/v/l402-server.svg)](https://www.npmjs.com/package/l402-server)
+[![npm downloads](https://img.shields.io/npm/dm/l402-server.svg)](https://www.npmjs.com/package/l402-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Monetize your API — 30-day free trial
+
+AI agents pay your API per request over Bitcoin Lightning. Flat subscription, no take rate — you keep 100% of every sat.
+
+- **[Start a 30-day free trial](https://api.lightningenable.com/Checkout?plan=individual&utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — Individual plan, $0 today.
+- **[Activate with Lightning (Fast Lane)](https://docs.lightningenable.com/getting-started/activate-with-lightning?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — pay 100 sats, get a 30-day Individual trial. No card.
+- **[Plans and pricing](https://lightningenable.com/pricing?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — $99/mo Individual · $299/mo Business.
 
 **L402 server SDK for Node.** Mint Lightning invoices and macaroons. Verify L402 tokens. Wrap any HTTP API with pay-per-request Lightning payments — one `npm install`, two methods.
 
