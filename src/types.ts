@@ -63,13 +63,17 @@ export interface CreateChallengeArgs {
   description?: string;
 
   /**
-   * Optional idempotency key. If the same key is sent twice within the
-   * invoice's expiry window, the same challenge is returned (no duplicate
-   * invoice). Useful for retry-safe issue from a middleware. Truncated to
-   * 256 chars server-side.
+   * Optional idempotency key. If the same key is sent again while the
+   * invoice it minted is still live, the same challenge is returned (no
+   * duplicate invoice). At most 200 characters; a whitespace-only or
+   * longer key is rejected with a 400. A live key reused for a different
+   * resource or price is rejected with a 409 (`idempotency_key_reuse`).
    *
-   * Defaults to none — the server falls back to client IP for
-   * deduplication, which is usually correct for middleware use.
+   * Pass one per buyer. Without a key, the server deduplicates by the
+   * CALLER's IP address plus resource and price. The caller is the server
+   * running this SDK, so every buyer of the same resource at the same price
+   * receives the same invoice until it expires, and only one of them can
+   * pay it.
    */
   idempotencyKey?: string;
 }
