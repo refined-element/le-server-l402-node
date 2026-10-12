@@ -9,11 +9,11 @@
 
 ## Monetize your API — 30-day free trial
 
-AI agents pay your API per request over Bitcoin Lightning. Flat subscription, no take rate — you keep 100% of every sat.
+AI agents pay your API per request over Bitcoin Lightning. Flat subscription, no take rate — you keep 100% of every sat. Lightning Enable does not hold funds; the payment provider facilitates custody and settlement.
 
-- **[Start a 30-day free trial](https://api.lightningenable.com/Checkout?plan=individual&utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — Individual plan, $0 today.
-- **[Activate with Lightning (Fast Lane)](https://docs.lightningenable.com/getting-started/activate-with-lightning?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — pay 100 sats, get a 30-day Individual trial. No card.
-- **[Plans and pricing](https://lightningenable.com/pricing?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — $99/mo Individual · $299/mo Business.
+- **[Start a 30-day free trial](https://api.lightningenable.com/Checkout?plan=individual&utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — Agentic Commerce plan. A card is required, and you aren't charged until the trial ends.
+- **[Activate with Lightning (Fast Lane)](https://docs.lightningenable.com/getting-started/activate-with-lightning?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — pay a one-time Lightning signup fee to start a 30-day Agentic Commerce trial. No card.
+- **[Plans and pricing](https://www.lightningenable.com/pricing?utm_source=npm&utm_medium=registry&utm_campaign=gtm-aug-2026)** — compare plans, including the Free Producer Sandbox.
 
 **L402 server SDK for Node.** Mint Lightning invoices and macaroons. Verify L402 tokens. Wrap any HTTP API with pay-per-request Lightning payments — one `npm install`, two methods.
 
@@ -23,7 +23,7 @@ This is the **producer-side** companion to [`l402-requests`](https://www.npmjs.c
 
 `l402-server` is a thin TypeScript wrapper around [Lightning Enable](https://lightningenable.com)'s hosted producer API. The protocol-heavy work — invoice minting, macaroon signing, preimage verification, replay protection, wallet integration (Strike / OpenNode / LND / NWC) — all runs on Lightning Enable's side. The SDK is ~200 lines of HTTP-client glue.
 
-**Requires a Lightning Enable merchant API key** and an Agentic Commerce subscription ($99/mo Individual or $299/mo Business). Get both at [lightningenable.com/dashboard](https://api.lightningenable.com/dashboard).
+Requires a Lightning Enable account on a plan that includes L402 (the Free Producer Sandbox works within its caps); see https://www.lightningenable.com for plans. The SDK authenticates with your **merchant API key**, which you get from the [Lightning Enable dashboard](https://api.lightningenable.com/dashboard).
 
 ## Install
 
@@ -85,11 +85,32 @@ if (result.valid) {
   resource: string;       // bound as a macaroon caveat
   priceSats: number;      // ≥ 1
   description?: string;   // shown in payer's wallet
-  idempotencyKey?: string; // optional; falls back to client IP
+  idempotencyKey?: string; // optional, but pass one per buyer (see below)
 }
 ```
 
 Returns: `{ invoice, macaroon, paymentHash, expiresAt, resource, priceSats, mppChallenge? }`.
+
+#### Pass an `idempotencyKey` for each buyer
+
+When you omit `idempotencyKey`, the Lightning Enable API deduplicates challenges by the caller's IP address, the resource, and the price, and returns the same challenge until its invoice expires. The caller is the server running this SDK, not the buyer, so every buyer who requests the same resource at the same price in that window receives the **same invoice**. A Lightning invoice can be paid only once, so after one buyer pays it, the others can't complete payment until it expires.
+
+To give each buyer their own invoice, pass an `idempotencyKey` with every `createChallenge` call:
+
+```ts
+import { randomUUID } from "node:crypto";
+
+const challenge = await l402.createChallenge({
+  resource: "/api/premium/weather",
+  priceSats: 100,
+  idempotencyKey: randomUUID(), // one invoice per unpaid request
+});
+```
+
+- A repeated key returns the challenge already minted under it while its invoice is live, so a retry of the same buyer request doesn't mint a second invoice.
+- If you derive the key from a stable buyer identifier, include the resource and price in it. The API rejects a key that's still bound to a live challenge for a different resource or price with `409 idempotency_key_reuse`.
+- Keys can be up to 200 characters. A longer key is rejected with `400`.
+- Each new key mints a new invoice, and every minted challenge counts toward any monthly challenge limit on your plan.
 
 ### `verifyToken(args)` → `Promise<VerificationResult>`
 
@@ -105,6 +126,8 @@ Returns: `{ invoice, macaroon, paymentHash, expiresAt, resource, priceSats, mppC
 Returns: `{ valid, error?, resource?, merchantId?, amountSats?, paymentHash? }`. Inspect `result.valid` — the producer API returns 200 OK for both valid and invalid tokens.
 
 Pass `resource` (typically the incoming request path) and/or `amountSats` (your endpoint's price) to have Lightning Enable enforce the macaroon's `path` and `amount_sats` caveats during verification — a token bound to a different resource or price tier comes back `valid: false`. If you omit them, the caveat values are still returned on the result but **not** enforced; the comparison is then your responsibility.
+
+`resource` and `amountSats` were added in 0.2.0. In 0.1.x, `verifyToken` didn't send them, so verification never enforced the `path` or `amount_sats` caveats; it only returned their values for you to compare.
 
 ### Errors
 
